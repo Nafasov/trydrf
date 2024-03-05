@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework import status
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import BasicAuthentication
 from .models import Article
-from .serializers import ArticleSerializer, ArticlePostSerializer
+from .serializers import ArticleSerializer
 
 
 @api_view(['GET'])
@@ -22,12 +23,16 @@ def article_detail_view(request, pk):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+# @authentication_classes([BasicAuthentication])
 def article_create_view(request):
-    serializer = ArticlePostSerializer(data=request.data)
+    print(request.user.id)
+    context = {
+        'user_id': request.user.id
+    }
+    serializer = ArticleSerializer(data=request.data, context=context)
     if serializer.is_valid():
         serializer.save()
-        article = get_object_or_404(Article, pk=serializer.data['id'])
-        serializer = ArticleSerializer(article)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     context = {
         'errors': serializer.errors,
@@ -39,11 +44,12 @@ def article_create_view(request):
 @api_view(['GET', 'POST'])
 def article_list_create_view(request):
     if request.method == 'POST':
-        serializer = ArticlePostSerializer(data=request.data)
+        context = {
+            'user_id': request.user.id
+        }
+        serializer = ArticleSerializer(data=request.data, context=context)
         if serializer.is_valid():
             serializer.save()
-            article = get_object_or_404(Article, pk=serializer.data['id'])
-            serializer = ArticleSerializer(article)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         context = {
             'errors': serializer.errors,

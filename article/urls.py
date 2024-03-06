@@ -5,6 +5,8 @@ from .views import (
     article_detail_view,
     article_create_view,
     article_list_create_view,
+    article_put_patch_view,
+
 )
 
 
@@ -16,4 +18,5 @@ urlpatterns = [
     path('detail/<int:pk>/', article_detail_view, name='detail'),
     path('create/', article_create_view, name='create'),
     path('list-create/', article_list_create_view, name='list-create'),
+    path('update/<int:pk>/', article_put_patch_view, name='update')
 ]

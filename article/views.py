@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import BasicAuthentication
 from .models import Article
 from .serializers import ArticleSerializer
@@ -42,6 +42,7 @@ def article_create_view(request):
 
 
 @api_view(['GET', 'POST'])
+@authentication_classes([IsAuthenticated])
 def article_list_create_view(request):
     if request.method == 'POST':
         context = {
@@ -59,4 +60,31 @@ def article_list_create_view(request):
     qs = Article.objects.all().order_by('-id')
     serializer = ArticleSerializer(qs, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+# @authentication_classes([IsAuthenticated])
+def article_put_patch_view(request, pk, *args, **kwargs):
+    article = get_object_or_404(Article, pk=pk)
+    if request.method == 'PATCH':
+        serializer = ArticleSerializer(instance=article, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    if request.method == 'PUT':
+        serializer = ArticleSerializer(instance=article, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    if request.method == 'DELETE':
+        article.delete()
+        ctx = {
+            'success': True,
+            'message': 'Article delete!'
+        }
+        return Response(ctx)
+    serializer = ArticleSerializer(article)
+    return Response(serializer.data)
+
+
 
